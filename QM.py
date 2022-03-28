@@ -1,5 +1,6 @@
 import numpy as np
-import itertools
+import math
+import queue
 
 
 class Node:
@@ -82,6 +83,9 @@ class QM:
         return flag
 
     def merge(self, level):
+        '''
+        多次合并
+        '''
         flag = False                                        # flag用于判断是否需要进行下一轮的递归比较
         if level == 0:
             flag = self._initial()
@@ -121,113 +125,80 @@ class QM:
                         self.PI.append(node)
         return self.PI
 
-    def find_prime(self, Chart):
+    def find_essential_prime(self, Chart):
+        '''
+        找到质主蕴含项
+        '''
         pos = np.argwhere(Chart.sum(axis=0) == 1)
-        prime = []
+        essential_prime = []
         for i in range(len(self.PI)):
             for j in range(len(pos)):
                 if Chart[i][pos[j][0]] == 1:
-                    prime.append(i)
-        prime = list(set(prime)) # 去除重复
-        return prime
+                    essential_prime.append(i)
+        essential_prime = list(set(essential_prime)) # 去除重复
+        return essential_prime
 
-    #multiply two terms (ex. (p1 + p2)(p1+p4+p5) )..it returns the product
-    def multiplication(self, list1, list2):
+    def cover_left(self, Chart):
+        '''
+        用BFS（广度优先搜索）的方法遍历，找出项最少的方法
+        '''
         list_result = []
-        #if empty
-        if len(list1) == 0 and len(list2) == 0:
-            return list_result
-        #if one is empty
-        elif len(list1) == 0:
-            return list2
-        #if another is empty
-        elif len(list2) == 0:
-            return list1
+        max_len = len(Chart)                           # 最大广度，也就是最多用到的项数
+        myQueue = queue.Queue(math.factorial(max_len)) # 队列
+        for i in range(max_len):
+            myQueue.put([i])
 
-        #both not empty
-        else:
-            for i in list1:
-                for j in list2:
-                    #if two term same
-                    if i == j:
-                        #list_result.append(sorted(i))
-                        list_result.append(i)
-                    else:
-                        #list_result.append(sorted(list(set(i+j))))
-                        list_result.append(list(set(i + j)))
-
-            #sort and remove redundant lists and return this list
-            list_result.sort()
-            return list(
-                list_result
-                for list_result, _ in itertools.groupby(list_result)
-            )
-
-        #petrick's method
-
-    def petrick_method(self, Chart):
-        #initial P
-        P = []
-        for col in range(len(Chart[0])):
-            p = []
-            for row in range(len(Chart)):
-                if Chart[row][col] == 1:
-                    p.append([row])
-            P.append(p)
-        #do multiplication
-        for l in range(len(P) - 1):
-            P[l + 1] = self.multiplication(P[l], P[l + 1])
-
-        P = sorted(P[len(P) - 1], key=len)
-        final = []
-        #find the terms with min length = this is the one with lowest cost (optimized result)
-        min = len(P[0])
-        for i in P:
-            if len(i) == min:
-                final.append(i)
-            else:
+        stop_flag = False                          # 停止搜索标志
+        while not myQueue.empty():
+            minterm_mark = np.zeros(len(Chart[0])) # 用于标记剩余的最小项是否被cover了
+            choice = myQueue.get()
+            if stop_flag and len(list_result[-1]) < len(choice):
                 break
-        #final is the result of petrick's method
-        return final
+
+            for row in choice:
+                minterm_mark += Chart[row]
+
+            if all(minterm_mark): # 如果当前choice能cover所有minterm
+                list_result.append(choice)
+                stop_flag = True  # 设置标志但不马上退出，防止有多解
+
+            for row in range(choice[-1] + 1, max_len):
+                myQueue.put(choice + [row]) # 产生新节点，加入队列
+        return list_result
 
     def find_minimum_cost(self, Chart):
-        P_final = []
-        #essential_prime = list with terms with only one 1 (Essential Prime Implicants)
-        essential_prime = self.find_prime(Chart)
+        QM_final = []
+        essential_prime = self.find_essential_prime(Chart)
 
-        #modifiy the chart to exclude the covered terms
+        # 更新Chart
         for i in range(len(essential_prime)):
             for j in range(len(Chart[0])):
                 if Chart[essential_prime[i]][j] == 1:
                     for row in range(len(Chart)):
                         Chart[row][j] = 0
 
-        #if all zero, no need for petrick method
+        # 如果Chart都是0，说明质主蕴含项已经覆盖所有最小项，已经得到最终结果了
         if not np.sum(Chart):
-            P_final = [essential_prime]
+            QM_final = [essential_prime]
+        # 否则找出未被质主蕴含项covered的minterm，以及那些能cover它们的PI（的行坐标）
         else:
-            #petrick's method（选完
-            P = self.petrick_method(Chart)
+            pos_col_left = np.argwhere(Chart.sum(axis=0) > 0) # 注意这一步得到的是二维数组
+            pos_row_left = np.argwhere(Chart.sum(axis=1) > 0) # 注意这一步得到的是一维数组
 
-            P_cost = []
-            for prime in P:
-                count = 0
-                for i in range(len(self.PI)):
-                    for j in prime:
-                        if j == i:
-                            count = count + self.PI[i].term.count('-')
-                P_cost.append(count)
+            # 生成新的Chart，删去全为0的行列
+            new_Chart = np.zeros([len(pos_row_left), len(pos_col_left)])
+            for i in range(len(pos_row_left)):
+                for j in range(len(pos_col_left)):
+                    if Chart[pos_row_left[i]][pos_col_left[j][0]] == 1:
+                        new_Chart[i][j] = 1
 
-            for i in range(len(P_cost)):
-                if P_cost[i] == min(P_cost):
-                    P_final.append(P[i])
-
-            for i in P_final:
-                for j in essential_prime:
-                    if j not in i:
-                        i.append(j)
-
-        return P_final
+            list_result = self.cover_left(new_Chart)
+            for lst in list_result:
+                final_solution = essential_prime + list(
+                    map(lambda x: pos_row_left[x], lst)
+                )
+                QM_final.append(final_solution)
+        return QM_final
 
     def select(self):
         Chart = np.zeros([len(self.PI), len(self.minterm_list)])
@@ -265,4 +236,5 @@ if __name__ == '__main__':
     #     )
     # )
     # myQM = QM(num, groups).run()
-    myQM = QM(4, [1, 2, 3, 5, 7, 11, 13]).run()
+    # myQM = QM(4, [0, 1, 3, 5, 8, 14, 15]).run()
+    myQM = QM(2, [0, 1, 2, 3]).run()
