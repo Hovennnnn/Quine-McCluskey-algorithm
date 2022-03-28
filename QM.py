@@ -249,4 +249,4 @@ if __name__ == '__main__':
     # )
     # myQM = QM(num, groups).run()
     # myQM = QM(4, [0, 1, 3, 5, 8, 14, 15]).run()
-    myQM = QM(2, [0, 1, 2, 3]).run()
+    myQM = QM(3, [1, 5, 3, 7]).run()
