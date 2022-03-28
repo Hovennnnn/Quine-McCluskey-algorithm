@@ -44,6 +44,8 @@ class Node:
                 logic_term += f'A{i}'
             else:
                 logic_term += f"A{i}'"
+        if len(logic_term) == 0: # 补充结果为1的情况
+            logic_term = '1'
         return logic_term
 
 
@@ -52,6 +54,11 @@ class QM:
     def __init__(self, num, lst) -> None:
         self.max_bits = num
         self.minterm_list = sorted(lst) # sort from min to max.
+        if len(self.minterm_list) == 0:
+            print(0)
+            exit()
+        if self.minterm_list[-1] >= 2**self.max_bits:
+            raise ValueError('input wrong！')
         self.node_list = []
         self.PI = []
 
@@ -249,4 +256,4 @@ if __name__ == '__main__':
     # )
     # myQM = QM(num, groups).run()
     # myQM = QM(4, [0, 1, 3, 5, 8, 14, 15]).run()
-    myQM = QM(3, [1, 5, 3, 7]).run()
+    myQM = QM(2, [1, 2]).run()
