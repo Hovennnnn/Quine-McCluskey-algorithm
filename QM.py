@@ -6,6 +6,9 @@ import queue
 class Node:
 
     def __init__(self, term, level) -> None:
+        '''
+        项
+        '''
         self.level = level # '-'的个数
         self.term = term   # 二进制形式（含有-)
         self.covered = False
@@ -116,7 +119,7 @@ class QM:
 
     def backtracking(self):
         '''
-        收集所有的PI
+        收集所有的主蕴含项PI
         '''
         for groups in self.node_list:
             for group in groups:
@@ -167,6 +170,9 @@ class QM:
         return list_result
 
     def find_minimum_cost(self, Chart):
+        '''
+        找到项数最少的方案
+        '''
         QM_final = []
         essential_prime = self.find_essential_prime(Chart)
 
@@ -201,6 +207,9 @@ class QM:
         return QM_final
 
     def select(self):
+        '''
+        选择最终方案并输出
+        '''
         Chart = np.zeros([len(self.PI), len(self.minterm_list)])
         for i in range(len(self.PI)):
             for j in range(len(self.minterm_list)):
@@ -222,6 +231,9 @@ class QM:
             print(str)
 
     def run(self):
+        '''
+        运行入口
+        '''
         self.merge(0)
         self.backtracking()
         self.select()
