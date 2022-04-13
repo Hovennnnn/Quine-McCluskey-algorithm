@@ -1,3 +1,6 @@
+# author: HovenChan
+# date: 2022.3.30
+
 import numpy as np
 import math
 import queue
@@ -196,13 +199,13 @@ class QM:
         # 否则找出未被质主蕴含项covered的minterm，以及那些能cover它们的PI（的行坐标）
         else:
             pos_col_left = np.argwhere(Chart.sum(axis=0) > 0) # 注意这一步得到的是二维数组
-            pos_row_left = np.argwhere(Chart.sum(axis=1) > 0) # 注意这一步得到的是一维数组
+            pos_row_left = np.argwhere(Chart.sum(axis=1) > 0) # 注意这一步得到的是二维数组(之前这里写错了，这里也是二维数组)
 
             # 生成新的Chart，删去全为0的行列
             new_Chart = np.zeros([len(pos_row_left), len(pos_col_left)])
             for i in range(len(pos_row_left)):
                 for j in range(len(pos_col_left)):
-                    if Chart[pos_row_left[i]][pos_col_left[j][0]] == 1:
+                    if Chart[pos_row_left[i][0]][pos_col_left[j][0]] == 1:
                         new_Chart[i][j] = 1
 
             list_result = self.cover_left(new_Chart)
@@ -256,4 +259,4 @@ if __name__ == '__main__':
     # )
     # myQM = QM(num, groups).run()
     # myQM = QM(4, [0, 1, 3, 5, 8, 14, 15]).run()
-    myQM = QM(2, [1, 2]).run()
+    myQM = QM(5, [2, 3, 7, 9, 10, 11, 12, 13, 18, 19, 22, 23, 26, 27, 30, 31]).run()
