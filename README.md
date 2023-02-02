@@ -1,4 +1,4 @@
-# Quine-McCluskey
+# Quine-McCluskey-algorithm-Python
 奎因-麦克拉斯基算法（pku2022数电）
 
 CSDN网址：https://blog.csdn.net/TonyChen1234/article/details/123847941
